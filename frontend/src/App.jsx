@@ -1,23 +1,33 @@
-/** Orchestrate setup and exactly one round while keeping the rules visible. */
+/** Orchestrate local rounds and session endings while keeping rules and outcomes visible. */
 import { useEffect, useRef, useState } from 'react';
 import SetupForm from './game/SetupForm.jsx';
 import RoundForm from './game/RoundForm.jsx';
 import RoundResult from './game/RoundResult.jsx';
 import { resolveRound } from './game/round.js';
+import Completion from './game/Completion.jsx';
+import { continueSession, stopSession, resetSession } from './game/session.js';
 
 /**
- * Show setup, a ready form, or a locked resolved session without continuation actions.
+ * Show setup, fresh rounds, locked results, and friendly completion.
  * @returns {JSX.Element} The game shell and persistent rules.
  */
 export default function App() {
   const [session, setSession] = useState(null);
   const roundLock = useRef(false);
   const readyHeading = useRef(null);
+  const setupPanel = useRef(null);
+  const focusSetup = useRef(false);
   const player = session?.player;
+  const panelHeading = !player ? 'setup-heading'
+    : session.phase === 'ready' ? 'ready-heading'
+      : session.phase === 'ended' ? 'completion-heading' : 'result-heading';
 
   useEffect(() => {
     if (session?.phase === 'ready') {
       readyHeading.current?.focus();
+    } else if (!session && focusSetup.current) {
+      setupPanel.current?.querySelector('#player-name')?.focus();
+      focusSetup.current = false;
     }
   }, [session?.phase]);
 
@@ -44,11 +54,34 @@ export default function App() {
     roundLock.current = true;
     const result = resolveRound(session, bet, guess);
     if (result.session) {
-      setSession(result.session);
+      setSession(result.session.player.balance < 100
+        ? stopSession(result.session) : result.session);
     } else {
       roundLock.current = false;
     }
     return result;
+  }
+
+  /** Continue only a valid result and release the lock for a newly mounted form. @returns {void} */
+  function handleContinue() {
+    const nextSession = continueSession(session);
+    if (nextSession) {
+      roundLock.current = false;
+      setSession(nextSession);
+    }
+  }
+
+  /** Retain the last result and balance without drawing. @returns {void} */
+  function handleStop() {
+    const nextSession = stopSession(session);
+    if (nextSession) setSession(nextSession);
+  }
+
+  /** Discard the player, round, inputs, and lock, then focus fresh setup. @returns {void} */
+  function handleRestart() {
+    roundLock.current = false;
+    focusSetup.current = true;
+    setSession(resetSession());
   }
 
   return (
@@ -59,7 +92,11 @@ export default function App() {
         <p className="intro-copy">Ten numbers. One match. Your own fictional credits.</p>
       </header>
       <div className="game-layout">
-        <section className="game-panel" aria-labelledby={player ? (session.phase === 'resolved' ? 'result-heading' : 'ready-heading') : 'setup-heading'}>
+        <section
+          ref={setupPanel}
+          className="game-panel"
+          aria-labelledby={panelHeading}
+        >
           {player ? (
             <>
               <p className="eyebrow">{session.phase === 'ready' ? 'Place your guess' : 'Round complete'}</p>
@@ -79,7 +116,22 @@ export default function App() {
               {session.phase === 'ready' ? (
                 <RoundForm session={session} onSubmit={handleRound} />
               ) : (
-                <RoundResult round={session.round} />
+                <>
+                  <RoundResult round={session.round} />
+                  {session.phase === 'resolved' && (
+                    <div className="session-actions">
+                      <button className="primary-button" type="button" onClick={handleContinue}>
+                        Continue
+                      </button>
+                      <button className="secondary-button" type="button" onClick={handleStop}>
+                        Stop
+                      </button>
+                    </div>
+                  )}
+                  {session.phase === 'ended' && (
+                    <Completion player={player} onRestart={handleRestart} />
+                  )}
+                </>
               )}
             </>
           ) : (

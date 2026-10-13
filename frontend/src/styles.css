@@ -59,8 +59,13 @@ input[aria-invalid='true'] { border-color: var(--error); }
 .field-hint { font-size: 0.875rem; margin: 0; overflow-wrap: anywhere; }
 .field-error { margin: 0; padding: var(--space-2) var(--space-3); background: var(--error-surface); color: var(--error); border-radius: var(--space-2); font-size: 0.9375rem; }
 .primary-button { min-height: 48px; padding: var(--space-3) var(--space-6); border: 0; border-radius: var(--radius-control); background: var(--primary); color: var(--on-primary); font-weight: 700; cursor: pointer; transition: background-color var(--duration) var(--ease), transform var(--duration) var(--ease); }
-.primary-button:hover { background: var(--primary-hover); transform: translateY(-1px); }
-.primary-button:active { transform: translateY(0); }
+.primary-button:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+.primary-button:active:not(:disabled) { transform: translateY(0); }
+.secondary-button { min-height: 48px; padding: var(--space-3) var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-raised); color: var(--foreground); font-weight: 600; cursor: pointer; }
+.secondary-button:hover:not(:disabled) { background: var(--background); }
+button:disabled, input:disabled { opacity: 0.6; cursor: not-allowed; }
+.session-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+.completion { margin-top: var(--space-8); }
 .rules { padding-top: var(--space-6); }
 .rules h2 { font-size: 1.5rem; }
 .rules ol { padding-left: var(--space-6); margin: 0 0 var(--space-6); }
