@@ -1,0 +1,88 @@
+/* Warm charcoal and amber keep the game panel as the single focal surface. */
+:root {
+  color-scheme: dark;
+  --background: #211e19;
+  --surface: #2b2721;
+  --surface-raised: #353028;
+  --foreground: #faf2e5;
+  --foreground-muted: #c9beaf;
+  --border: #8e7f69;
+  --primary: #efb75b;
+  --primary-hover: #f8ca7f;
+  --on-primary: #241c10;
+  --ring: #ffd18a;
+  --error: #ffb4a6;
+  --error-surface: #452b25;
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --radius-control: 0.75rem;
+  --radius-panel: 1.25rem;
+  --shadow-panel: 0 16px 48px #00000040, 0 1px 0 #ffffff08 inset;
+  --duration: 200ms;
+  --ease: ease-out;
+  font-family: var(--font-body);
+  color: var(--foreground);
+  background: var(--background);
+  line-height: 1.6;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 280px; }
+button, input { font: inherit; }
+::selection { background: var(--primary); color: var(--on-primary); }
+:focus-visible { outline: 3px solid var(--ring); outline-offset: 4px; }
+h1, h2 { font-family: var(--font-display); font-weight: 400; line-height: 1.15; }
+h1 { font-size: clamp(2.5rem, 6vw, 4.25rem); letter-spacing: -0.04em; margin: 0 0 var(--space-4); }
+h2 { font-size: clamp(1.8rem, 4vw, 2.25rem); margin: 0 0 var(--space-4); }
+p { margin: 0 0 var(--space-4); }
+
+.game-shell { max-width: 960px; margin: auto; padding: var(--space-12) var(--space-6); }
+.game-intro { max-width: 640px; margin-bottom: var(--space-8); }
+.eyebrow { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; color: var(--primary); margin-bottom: var(--space-3); }
+.intro-copy { color: var(--foreground-muted); font-size: 1.125rem; }
+.game-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-8); align-items: start; }
+.game-panel { background: var(--surface); padding: var(--space-8); border-radius: var(--radius-panel); border-top: 3px solid var(--primary); box-shadow: var(--shadow-panel); min-width: 0; }
+.panel-copy, .field-hint, .ready-copy, .local-note { color: var(--foreground-muted); }
+.setup-form { display: grid; gap: var(--space-6); margin-top: var(--space-6); }
+.field { display: grid; gap: var(--space-2); }
+label { font-weight: 600; }
+input { width: 100%; min-height: 48px; padding: var(--space-3) var(--space-4); color: var(--foreground); background: var(--background); border: 1px solid var(--border); border-radius: var(--radius-control); }
+input[aria-invalid='true'] { border-color: var(--error); }
+.field-hint { font-size: 0.875rem; margin: 0; overflow-wrap: anywhere; }
+.field-error { margin: 0; padding: var(--space-2) var(--space-3); background: var(--error-surface); color: var(--error); border-radius: var(--space-2); font-size: 0.9375rem; }
+.primary-button { min-height: 48px; padding: var(--space-3) var(--space-6); border: 0; border-radius: var(--radius-control); background: var(--primary); color: var(--on-primary); font-weight: 700; cursor: pointer; transition: background-color var(--duration) var(--ease), transform var(--duration) var(--ease); }
+.primary-button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.primary-button:active { transform: translateY(0); }
+.rules { padding-top: var(--space-6); }
+.rules h2 { font-size: 1.5rem; }
+.rules ol { padding-left: var(--space-6); margin: 0 0 var(--space-6); }
+.rules li { margin-bottom: var(--space-3); color: var(--foreground-muted); }
+.rules strong { color: var(--foreground); }
+.disclaimer { border-top: 1px solid var(--border); padding-top: var(--space-4); font-size: 0.9375rem; }
+.local-note { font-size: 0.875rem; margin: 0; }
+.player-summary { display: grid; gap: var(--space-4); margin: var(--space-6) 0; }
+.player-summary div { padding-bottom: var(--space-4); border-bottom: 1px solid var(--border); }
+.player-summary dt { color: var(--foreground-muted); font-size: 0.875rem; }
+.player-summary dd { margin: var(--space-1) 0 0; font-size: 1.375rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.player-summary .balance { color: var(--primary); font-size: clamp(1.5rem, 3vw, 2rem); }
+.ready-copy { margin: 0; }
+
+@media (max-width: 640px) {
+  .game-shell { padding: var(--space-8) var(--space-4); }
+  .game-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .game-panel { padding: var(--space-6); }
+  .game-intro { margin-bottom: var(--space-6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-button { transition: none; }
+  .primary-button:hover, .primary-button:active { transform: none; }
+}
