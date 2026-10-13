@@ -20,6 +20,17 @@ describe('RoundResult', () => {
     expect(screen.getByText(/eligible to continue/)).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
+  it.each([1, 2])('preserves result focus and only prevents repeated mousedown at detail %i', (detail) => {
+    render(<RoundResult round={loss} />);
+    const heading = screen.getByRole('heading', { name: 'Round result: Loss' });
+    expect(heading).toHaveFocus();
+    const mouseDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true, detail });
+
+    screen.getByRole('status').dispatchEvent(mouseDown);
+
+    expect(mouseDown.defaultPrevented).toBe(detail > 1);
+    expect(heading).toHaveFocus();
+  });
   it.each([0, 99, 100, 900])('shows loss arithmetic and correct eligibility at %i credits', (balanceAfter) => {
     render(<RoundResult round={{ ...loss, balanceBefore: balanceAfter + 100, balanceAfter }} />);
     expect(screen.getByRole('heading', { name: 'Round result: Loss' })).toHaveFocus();

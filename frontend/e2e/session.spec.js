@@ -42,6 +42,46 @@ async function attachState(page, testInfo, state) {
   await testInfo.attach(`${state}-styles`, {
     body: JSON.stringify(styles, null, 2), contentType: 'application/json'
   });
+  // Objective NFR-LAYOUT-01 checks, shared by every state on desktop and mobile.
+  const geometry = await page.locator('main').evaluate((main) => {
+    const bounds = (element) => {
+      const { left, right, width } = element.getBoundingClientRect();
+      return { left, right, width };
+    };
+    return {
+      viewportWidth: document.documentElement.clientWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      bodyScrollWidth: document.body.scrollWidth,
+      mainScrollWidth: main.scrollWidth,
+      mainClientWidth: main.clientWidth,
+      main: bounds(main),
+      panel: bounds(main.querySelector('.game-panel')),
+      controls: Array.from(main.querySelectorAll('input, button'), (control) => ({
+        name: control.labels?.[0]?.textContent || control.textContent || control.id,
+        ...bounds(control),
+        container: bounds(control.parentElement)
+      }))
+    };
+  });
+  await testInfo.attach(`${state}-geometry`, {
+    body: JSON.stringify(geometry, null, 2), contentType: 'application/json'
+  });
+  const tolerance = 1;
+  for (const key of ['documentScrollWidth', 'bodyScrollWidth', 'mainScrollWidth']) {
+    expect(geometry[key], `${state}: ${key} fits the viewport`).toBeLessThanOrEqual(geometry.viewportWidth + tolerance);
+  }
+  expect(geometry.mainScrollWidth, `${state}: main has no horizontal overflow`).toBeLessThanOrEqual(geometry.mainClientWidth + tolerance);
+  expect(geometry.controls.length, `${state}: controls are measured`).toBeGreaterThan(0);
+  for (const control of geometry.controls) {
+    const label = `${state}: ${control.name}`;
+    expect(control.width, `${label} has a rendered width`).toBeGreaterThan(0);
+    expect(control.left, `${label} fits the viewport left edge`).toBeGreaterThanOrEqual(-tolerance);
+    expect(control.right, `${label} fits the viewport right edge`).toBeLessThanOrEqual(geometry.viewportWidth + tolerance);
+    for (const [name, container] of Object.entries({ parent: control.container, panel: geometry.panel, main: geometry.main })) {
+      expect(control.left, `${label} fits ${name} left edge`).toBeGreaterThanOrEqual(container.left - tolerance);
+      expect(control.right, `${label} fits ${name} right edge`).toBeLessThanOrEqual(container.right + tolerance);
+    }
+  }
 }
 
 /** Assert real arithmetic using the displayed target, never a controlled random source. */
@@ -173,6 +213,55 @@ test('all-balance real round retains outcome on exhaustion or permits stopping a
   await expect(page.getByLabel('Player name')).toBeFocused();
   await expect(page.getByLabel('Player name')).toHaveValue('');
   await expect(page.getByLabel('Starting credits')).toHaveValue('');
+});
+
+/** Exercise long text and exact-credit boundaries through the real UI without RNG overrides. */
+test('long-name setup and max-credit overflow validation fit through a real round and completion', async ({ page }, testInfo) => {
+  const playerName = 'Alexandria Montgomery Riverstone '.repeat(4).trim();
+  const maxCredits = Number.MAX_SAFE_INTEGER;
+  await page.getByLabel('Player name').fill(playerName);
+  await page.getByLabel('Starting credits').fill('9007199254740992');
+  await attachState(page, testInfo, 'long-setup');
+  await page.getByRole('button', { name: 'Set up player' }).click();
+  await expect(page.getByRole('alert')).toHaveText('Enter digits only, up to 9,007,199,254,740,991 credits.');
+  await expect(page.getByLabel('Player name')).toHaveValue(playerName);
+  await expect(page.getByLabel('Starting credits')).toHaveAttribute('aria-invalid', 'true');
+  await attachState(page, testInfo, 'long-setup-error');
+
+  await page.getByLabel('Starting credits').fill(String(maxCredits));
+  await page.getByRole('button', { name: 'Set up player' }).click();
+  await expect(page.getByRole('heading', { name: 'Ready to play' })).toBeFocused();
+  await expect(page.getByText(playerName, { exact: true })).toBeVisible();
+  await expect(page.locator('.balance')).toHaveText('9,007,199,254,740,991 credits');
+  await attachState(page, testInfo, 'long-max-ready');
+  await page.getByLabel('Bet credits').fill('100');
+  await page.getByLabel('Your guess').fill('1');
+  await page.getByRole('button', { name: 'Submit guess' }).click();
+  await expect(page.getByRole('alert')).toHaveText('A possible win would exceed the safe credit limit. Choose a smaller bet.');
+  await expect(page.getByLabel('Bet credits')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByLabel('Your guess')).toHaveValue('1');
+  await expect(page.locator('.balance')).toHaveText('9,007,199,254,740,991 credits');
+  await expect(page.getByRole('heading', { name: /Round result:/ })).toHaveCount(0);
+  await attachState(page, testInfo, 'long-max-overflow-error');
+
+  // At the maximum every legal bet overflows a prospective win; restart with room for 10 × 100.
+  await page.reload();
+  const startingCredits = maxCredits - 1000;
+  await page.getByLabel('Player name').fill(playerName);
+  await page.getByLabel('Starting credits').fill(String(startingCredits));
+  await page.getByRole('button', { name: 'Set up player' }).click();
+  await expect(page.getByRole('heading', { name: 'Ready to play' })).toBeFocused();
+  await attachState(page, testInfo, 'long-near-max-ready');
+  await page.getByLabel('Bet credits').fill('100');
+  await page.getByLabel('Your guess').fill('1');
+  await page.getByRole('button', { name: 'Submit guess' }).click();
+  const finalBalance = await checkResult(page, startingCredits, 100, 1);
+  await attachState(page, testInfo, 'long-near-max-result');
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Session complete' })).toBeFocused();
+  await expect(page.getByText(`Thanks for playing, ${playerName}!`)).toBeVisible();
+  await expect(page.getByText('Final balance').locator('..').locator('dd')).toHaveText(`${finalBalance.toLocaleString('en-US')} credits`);
+  await attachState(page, testInfo, 'long-near-max-completion');
 });
 
 // No backend/API/loading/persistence checks apply: this is a synchronous local-only static app.

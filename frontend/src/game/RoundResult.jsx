@@ -19,7 +19,10 @@ export default function RoundResult({ round }) {
   }, [round]);
 
   return (
-    <div>
+    <div onMouseDown={(event) => {
+      // Keep result focus when the remaining click of a double-click lands here.
+      if (event.detail > 1) event.preventDefault();
+    }}>
       <h2 id="result-heading" ref={headingRef} tabIndex={-1}>Round result: {won ? 'Win' : 'Loss'}</h2>
       <p className="panel-copy" role="status" aria-live="polite" aria-atomic="true">
         {won ? 'You matched the number.' : 'Your guess did not match.'}
