@@ -103,8 +103,9 @@ describe('setup orchestration', () => {
     expect(screen.getByText(unsafeName)).toBeInTheDocument();
     expect(container.querySelector('img')).toBeNull();
     expect(screen.getByText('1,000 credits')).toBeInTheDocument();
-    expect(screen.queryByRole('form')).not.toBeInTheDocument();
-    expect(screen.getByText(/no bet has been placed/)).toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'Player setup' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Bet/ })).toHaveValue('');
+    expect(screen.getByRole('textbox', { name: 'Your guess' })).toHaveValue('');
     expect(screen.getByText('1–10')).toBeInTheDocument();
     expect(screen.getByText('adds 10 × your bet')).toBeInTheDocument();
     expect(screen.getByText(/with no stake deduction/)).toBeInTheDocument();

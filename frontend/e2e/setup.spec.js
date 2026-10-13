@@ -38,7 +38,8 @@ test('keyboard setup trims the name, shows the ready balance and preserves rules
   await expect(page.getByRole('heading', { name: 'Ready to play' })).toBeFocused();
   await expect(page.getByText('Ada Lovelace', { exact: true })).toBeVisible();
   await expect(page.getByText('1,000 credits', { exact: true })).toBeVisible();
-  await expect(page.getByText(/no bet has been placed/)).toBeVisible();
+  await expect(page.getByRole('textbox', { name: /Bet/ })).toHaveValue('');
+  await expect(page.getByRole('textbox', { name: 'Your guess' })).toHaveValue('');
   await expect(page.getByRole('heading', { name: 'The rules, in plain sight' })).toBeVisible();
   await expect(page.getByText('adds 10 × your bet', { exact: true })).toBeVisible();
   await expect(page.getByText(/with no stake deduction/)).toBeVisible();
